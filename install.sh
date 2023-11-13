@@ -402,6 +402,7 @@ nginx_install() {
         --with-http_mp4_module \
         --with-http_secure_link_module \
         --with-http_v2_module \
+        --with-http_dav_module \
         --with-cc-opt='-O3' \
         --with-ld-opt="-ljemalloc" \
         --with-openssl=../openssl-"$openssl_version"
