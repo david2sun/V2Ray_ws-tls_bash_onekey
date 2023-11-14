@@ -403,6 +403,7 @@ nginx_install() {
         --with-http_secure_link_module \
         --with-http_v2_module \
         --with-http_dav_module \
+        --with-nginx-dav-ext-module \
         --with-cc-opt='-O3' \
         --with-ld-opt="-ljemalloc" \
         --with-openssl=../openssl-"$openssl_version"
