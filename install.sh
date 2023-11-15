@@ -390,7 +390,7 @@ nginx_install() {
     sleep 4
 
     cd ../nginx-${nginx_version} || exit
-
+    git clone https://github.com/arut/nginx-dav-ext-module.git
     ./configure --prefix="${nginx_dir}" \
         --with-http_ssl_module \
         --with-http_sub_module \
@@ -402,7 +402,7 @@ nginx_install() {
         --with-http_mp4_module \
         --with-http_secure_link_module \
         --with-http_v2_module \
-        --with-http_dav_module \
+        --with-http_dav_module --add-module=/root/nginx-dav-ext-module/ \
         --with-cc-opt='-O3' \
         --with-ld-opt="-ljemalloc" \
         --with-openssl=../openssl-"$openssl_version"
