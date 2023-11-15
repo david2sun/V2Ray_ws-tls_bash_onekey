@@ -229,6 +229,11 @@ dependency_install() {
     fi
 
     mkdir -p /usr/local/bin >/dev/null 2>&1
+    ${INS} -y install libxml2 libxml2-dev libxslt1-dev
+judge "安装 libxml2, libxml2-dev, libxslt1-dev"
+
+git clone https://github.com/arut/nginx-dav-ext-module.git /root/nginx-dav-ext-module
+judge "克隆 nginx-dav-ext-module"
 }
 
 basic_optimization() {
@@ -556,6 +561,8 @@ old_config_exist_check() {
 }
 
 nginx_conf_add() {
+    sed -i '/http {/a \    server_names_hash_bucket_size 64;' ${nginx_dir}/conf/nginx.conf
+    judge "添加 server_names_hash_bucket_size 配置"
     touch ${nginx_conf_dir}/v2ray.conf
     cat >${nginx_conf_dir}/v2ray.conf <<EOF
     server {
