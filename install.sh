@@ -390,7 +390,7 @@ nginx_install() {
     sleep 4
 
     cd ../nginx-${nginx_version} || exit
-    git clone https://github.com/arut/nginx-dav-ext-module.git
+    
     ./configure --prefix="${nginx_dir}" \
         --with-http_ssl_module \
         --with-http_sub_module \
