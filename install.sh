@@ -232,6 +232,10 @@ dependency_install() {
     ${INS} -y install libxml2 libxml2-dev libxslt1-dev
 judge "安装 libxml2, libxml2-dev, libxslt1-dev"
 
+if [ -d "/root/nginx-dav-ext-module" ]; then
+        rm -rf /root/nginx-dav-ext-module
+    fi
+
 git clone https://github.com/arut/nginx-dav-ext-module.git /root/nginx-dav-ext-module
 judge "克隆 nginx-dav-ext-module"
 }
