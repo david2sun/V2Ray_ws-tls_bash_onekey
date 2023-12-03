@@ -648,6 +648,9 @@ nginx_process_disabled() {
     [ -f $nginx_systemd_file ] && systemctl stop nginx && systemctl disable nginx
 }
 
+echo 'export PATH="$PATH:/etc/nginx/sbin"' >> ~/.bashrc
+source ~/.bashrc
+
 #debian 系 9 10 适配
 #rc_local_initialization(){
 #    if [[ -f /etc/rc.local ]];then
