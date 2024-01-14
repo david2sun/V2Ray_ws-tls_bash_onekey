@@ -39,6 +39,7 @@ v2ray_conf_dir="/etc/v2ray"
 nginx_conf_dir="/etc/nginx/conf/conf.d"
 v2ray_conf="${v2ray_conf_dir}/config.json"
 nginx_conf="${nginx_conf_dir}/v2ray.conf"
+webdav_conf="${nginx_conf_dir}/webdav.conf"
 nginx_dir="/etc/nginx"
 web_dir="/home/wwwroot"
 nginx_openssl_src="/usr/local/src"
@@ -328,6 +329,10 @@ modify_domain() {
     sed -i "s/${domain}/${new_domain}/g" ${v2ray_conf}
     judge "修改 V2Ray 配置"
 
+    # 更新 webdav 配置
+    sed -i "s/${domain}/${new_domain}/g" ${webdav_conf}
+    judge "修改 webdav 配置"
+    
     # 更新域名信息
     domain=${new_domain}
     echo -e "${domain}" > "${v2ray_info_file}"
@@ -372,6 +377,10 @@ apply_for_ssl_certificate() {
     # 重启 Nginx 服务
     systemctl start nginx
     judge "启动 Nginx 服务"
+
+    # 重启 v2ray 服务
+    systemctl restart v2ray
+    judge "重启 v2ray 服务"
 }
 
 web_camouflage() {
