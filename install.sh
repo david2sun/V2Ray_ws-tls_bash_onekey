@@ -314,6 +314,71 @@ modify_nginx_other() {
     #sed -i "27i \\\tproxy_intercept_errors on;"  ${nginx_dir}/conf/nginx.conf
 }
 
+# 修改域名的函数
+modify_domain() {
+    echo -e "${Green}正在修改域名...${Font}"
+    read -rp "请输入新的域名:" new_domain
+
+    # 更新域名变量
+    domain=${new_domain}
+
+    # 检查新域名
+    domain_check
+
+    # 更新 Nginx 配置
+    sed -i "s/${domain}/${new_domain}/g" ${nginx_conf}
+    judge "修改 Nginx 配置"
+
+    # 更新 V2Ray 配置
+    sed -i "s/${domain}/${new_domain}/g" ${v2ray_conf}
+    judge "修改 V2Ray 配置"
+
+    # 更新域名信息
+    domain=${new_domain}
+    echo -e "${domain}" > "${v2ray_info_file}"
+    judge "保存域名信息"
+
+    # 申请新的 SSL 证书
+    apply_for_ssl_certificate
+}
+
+# 为新域名申请 SSL 证书的函数
+apply_for_ssl_certificate() {
+    echo -e "${Green}正在为新域名申请 SSL 证书...${Font}"
+
+    # 停止 Nginx 服务
+    systemctl stop nginx
+    judge "停止 Nginx 服务"
+
+    # 设置默认的证书颁发机构为 Let's Encrypt
+    "$HOME"/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+
+    # 申请证书
+    if "$HOME"/.acme.sh/acme.sh --issue --insecure -d "${domain}" --standalone -k ec-256 --force; then
+        echo -e "${OK} ${GreenBG} SSL 证书生成成功 ${Font}"
+        sleep 2
+
+        # 确保 /data 目录存在
+        mkdir -p /data
+
+        # 安装证书
+        if "$HOME"/.acme.sh/acme.sh --installcert -d "${domain}" --fullchainpath /data/v2ray.crt --keypath /data/v2ray.key --ecc --force; then
+            echo -e "${OK} ${GreenBG} 证书配置成功 ${Font}"
+            sleep 2
+        else
+            echo -e "${Error} ${RedBG} 证书配置失败 ${Font}"
+            exit 1
+        fi
+    else
+        echo -e "${Error} ${RedBG} SSL 证书生成失败 ${Font}"
+        exit 1
+    fi
+
+    # 重启 Nginx 服务
+    systemctl start nginx
+    judge "启动 Nginx 服务"
+}
+
 web_camouflage() {
     ##请注意 这里和LNMP脚本的默认路径冲突，千万不要在安装了LNMP的环境下使用本脚本，否则后果自负
     rm -rf /home/wwwroot
@@ -1052,7 +1117,7 @@ menu() {
     echo -e "${Green}15.${Font} 更新 证书crontab计划任务"
     echo -e "${Green}16.${Font} 清空 证书遗留文件"
     echo -e "${Green}17.${Font} 退出 \n"
-
+    echo -e "${Green}19.${Font} 修改域名并重新申请 SSL 证书"
     read -rp "请输入数字：" menu_num
     case $menu_num in
     0)
@@ -1129,6 +1194,9 @@ menu() {
         read -rp "请输入伪装路径(注意！不需要加斜杠 eg:ray):" camouflage_path
         modify_camouflage_path
         start_process_systemd
+        ;;
+    19) 
+        modify_domain
         ;;
     *)
         echo -e "${RedBG}请输入正确的数字${Font}"
