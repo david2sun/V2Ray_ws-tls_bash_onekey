@@ -318,10 +318,8 @@ modify_nginx_other() {
 modify_domain() {
     echo -e "${Green}正在修改域名...${Font}"
     read -rp "请输入新的域名:" new_domain   
-
-    # 检查新域名
-    domain_check
-
+    read -rp "请输入旧的域名:" domain
+    
     # 更新 Nginx 配置
     sed -i "s/${domain}/${new_domain}/g" ${nginx_conf}
     judge "修改 Nginx 配置"
@@ -1114,7 +1112,7 @@ menu() {
     echo -e "${Green}15.${Font} 更新 证书crontab计划任务"
     echo -e "${Green}16.${Font} 清空 证书遗留文件"
     echo -e "${Green}17.${Font} 退出 \n"
-    echo -e "${Green}19.${Font} 修改域名并重新申请 SSL 证书"
+    echo -e "${Green}19.${Font} 修改域名并重新申请 SSL 证书 \n"
     read -rp "请输入数字：" menu_num
     case $menu_num in
     0)
