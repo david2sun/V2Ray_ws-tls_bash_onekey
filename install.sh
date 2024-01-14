@@ -317,10 +317,7 @@ modify_nginx_other() {
 # 修改域名的函数
 modify_domain() {
     echo -e "${Green}正在修改域名...${Font}"
-    read -rp "请输入新的域名:" new_domain
-
-    # 更新域名变量
-    domain=${new_domain}
+    read -rp "请输入新的域名:" new_domain   
 
     # 检查新域名
     domain_check
