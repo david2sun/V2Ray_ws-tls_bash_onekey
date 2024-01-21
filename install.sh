@@ -319,18 +319,18 @@ modify_nginx_other() {
 modify_domain() {
     echo -e "${Green}正在修改域名...${Font}"
     read -rp "请输入新的域名:" new_domain   
-    read -rp "请输入旧的域名:" domain
+    read -rp "请输入旧的域名:" old_domain
     
     # 更新 Nginx 配置
-    sed -i "s/${domain}/${new_domain}/g" ${nginx_conf}
+    sed -i "s/${old_domain}/${new_domain}/g" ${nginx_conf}
     judge "修改 Nginx 配置"
 
     # 更新 V2Ray 配置
-    sed -i "s/${domain}/${new_domain}/g" ${v2ray_conf}
+    sed -i "s/${old_domain}/${new_domain}/g" ${v2ray_conf}
     judge "修改 V2Ray 配置"
 
     # 更新 webdav 配置
-    sed -i "s/${domain}/${new_domain}/g" ${webdav_conf}
+    sed -i "s/${old_domain}/${new_domain}/g" ${webdav_conf}
     judge "修改 webdav 配置"
     
     # 更新域名信息
