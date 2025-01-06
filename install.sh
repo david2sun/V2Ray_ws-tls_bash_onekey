@@ -516,48 +516,77 @@ ssl_install() {
     judge "安装 SSL 证书生成脚本"
 }
 
+# domain_check() {
+#     read -rp "请输入你的域名信息(eg:www.wulabing.com):" domain
+#     domain_ip=$(curl -sm8 https://ipget.net/?ip="${domain}")
+#     echo -e "${OK} ${GreenBG} 正在获取 公网ip 信息，请耐心等待 ${Font}"
+#     wgcfv4_status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
+#     wgcfv6_status=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
+#     if [[ ${wgcfv4_status} =~ "on"|"plus" ]] || [[ ${wgcfv6_status} =~ "on"|"plus" ]]; then
+#         # 关闭wgcf-warp，以防误判VPS IP情况
+#         wg-quick down wgcf >/dev/null 2>&1
+#         echo -e "${OK} ${GreenBG} 已关闭 wgcf-warp ${Font}"
+#     fi
+#     local_ipv4=$(curl -s4m8 http://ip.sb)
+#     local_ipv6=$(curl -s6m8 http://ip.sb)
+#     if [[ -z ${local_ipv4} && -n ${local_ipv6} ]]; then
+#         echo -e nameserver 2a01:4f8:c2c:123f::1 > /etc/resolv.conf
+#         echo -e "${OK} ${GreenBG} 识别为 IPv6 Only 的 VPS，自动添加 DNS64 服务器 ${Font}"
+#     fi
+#     echo -e "域名 DNS 解析到的的 IP：${domain_ip}"
+#     echo -e "本机IPv4: ${local_ipv4}"
+#     echo -e "本机IPv6: ${local_ipv6}"
+#     sleep 2
+#     if [[ ${domain_ip} == ${local_ipv4} ]]; then
+#         echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP 与 本机 IPv4 匹配 ${Font}"
+#         sleep 2
+#     elif [[ ${domain_ip} == ${local_ipv6} ]]; then
+#         echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP 与 本机 IPv6 匹配 ${Font}"
+#         sleep 2
+#     else
+#         echo -e "${Error} ${RedBG} 请确保域名添加了正确的 A / AAAA 记录，否则将无法正常使用 V2ray ${Font}"
+#         echo -e "${Error} ${RedBG} 域名 DNS 解析 IP 与 本机 IPv4 / IPv6 不匹配 是否继续安装？（y/n）${Font}" && read -r install
+#         case $install in
+#         [yY][eE][sS] | [yY])
+#             echo -e "${GreenBG} 继续安装 ${Font}"
+#             sleep 2
+#             ;;
+#         *)
+#             echo -e "${RedBG} 安装终止 ${Font}"
+#             exit 2
+#             ;;
+#         esac
+#     fi
+# }
 domain_check() {
     read -rp "请输入你的域名信息(eg:www.wulabing.com):" domain
-    domain_ip=$(curl -sm8 https://ipget.net/?ip="${domain}")
-    echo -e "${OK} ${GreenBG} 正在获取 公网ip 信息，请耐心等待 ${Font}"
-    wgcfv4_status=$(curl -s4m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-    wgcfv6_status=$(curl -s6m8 https://www.cloudflare.com/cdn-cgi/trace -k | grep warp | cut -d= -f2)
-    if [[ ${wgcfv4_status} =~ "on"|"plus" ]] || [[ ${wgcfv6_status} =~ "on"|"plus" ]]; then
-        # 关闭wgcf-warp，以防误判VPS IP情况
-        wg-quick down wgcf >/dev/null 2>&1
-        echo -e "${OK} ${GreenBG} 已关闭 wgcf-warp ${Font}"
-    fi
+    domain_ip=$(dig +short "${domain}" | tr '\n' ' ')
+    echo -e "域名 DNS 解析到的 IP：${domain_ip}"
+    
     local_ipv4=$(curl -s4m8 http://ip.sb)
     local_ipv6=$(curl -s6m8 http://ip.sb)
-    if [[ -z ${local_ipv4} && -n ${local_ipv6} ]]; then
-        echo -e nameserver 2a01:4f8:c2c:123f::1 > /etc/resolv.conf
-        echo -e "${OK} ${GreenBG} 识别为 IPv6 Only 的 VPS，自动添加 DNS64 服务器 ${Font}"
-    fi
-    echo -e "域名 DNS 解析到的的 IP：${domain_ip}"
-    echo -e "本机IPv4: ${local_ipv4}"
-    echo -e "本机IPv6: ${local_ipv6}"
-    sleep 2
-    if [[ ${domain_ip} == ${local_ipv4} ]]; then
-        echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP 与 本机 IPv4 匹配 ${Font}"
-        sleep 2
-    elif [[ ${domain_ip} == ${local_ipv6} ]]; then
-        echo -e "${OK} ${GreenBG} 域名 DNS 解析 IP 与 本机 IPv6 匹配 ${Font}"
-        sleep 2
+    echo -e "本机 IPv4: ${local_ipv4}"
+    echo -e "本机 IPv6: ${local_ipv6}"
+    
+    if echo "${domain_ip}" | grep -q "${local_ipv4}"; then
+        echo -e "域名 DNS 解析 IP 与本机 IPv4 匹配"
+    elif echo "${domain_ip}" | grep -q "${local_ipv6}"; then
+        echo -e "域名 DNS 解析 IP 与本机 IPv6 匹配"
     else
-        echo -e "${Error} ${RedBG} 请确保域名添加了正确的 A / AAAA 记录，否则将无法正常使用 V2ray ${Font}"
-        echo -e "${Error} ${RedBG} 域名 DNS 解析 IP 与 本机 IPv4 / IPv6 不匹配 是否继续安装？（y/n）${Font}" && read -r install
+        echo -e "请确保域名添加了正确的 A / AAAA 记录，否则将无法正常使用 V2ray"
+        read -rp "是否继续安装？（y/n）" install
         case $install in
         [yY][eE][sS] | [yY])
-            echo -e "${GreenBG} 继续安装 ${Font}"
-            sleep 2
+            echo -e "继续安装"
             ;;
         *)
-            echo -e "${RedBG} 安装终止 ${Font}"
+            echo -e "安装终止"
             exit 2
             ;;
         esac
     fi
 }
+
 
 port_exist_check() {
     if [[ 0 -eq $(lsof -i:"$1" | grep -i -c "listen") ]]; then
