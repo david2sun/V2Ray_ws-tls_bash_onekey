@@ -481,6 +481,8 @@ nginx_install() {
         --with-http_secure_link_module \
         --with-http_v2_module \
         --with-http_dav_module --add-module=/root/nginx-dav-ext-module \
+        --with-stream \
+        --with-stream_ssl_module \
         --with-cc-opt='-O3' \
         --with-ld-opt="-ljemalloc" \
         --with-openssl=../openssl-"$openssl_version"
