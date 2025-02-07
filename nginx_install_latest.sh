@@ -93,7 +93,6 @@ cd ../nginx-${nginx_version} || exit
     --with-stream_ssl_module \
     --with-threads \
     --with-file-aio \
-    --with-http_quic_module \
     --add-module=../ngx_brotli \
     --add-module=../ngx_cache_purge \
     --with-cc-opt='-O3' \
