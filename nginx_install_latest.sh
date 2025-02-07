@@ -91,7 +91,6 @@ cd ../nginx-${nginx_version} || exit
     --with-http_dav_module --add-module=/root/nginx-dav-ext-module \
     --with-stream \
     --with-stream_ssl_module \
-    --with-http_grpc_module \
     --with-threads \
     --with-file-aio \
     --with-http_quic_module \
