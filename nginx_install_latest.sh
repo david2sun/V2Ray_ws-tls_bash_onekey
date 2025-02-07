@@ -1,7 +1,7 @@
 #!/bin/bash
 #====================================================
 #    Nginx 1.26.3 编译安装脚本 (Ubuntu 20.04)
-#    保留原有模块，并新增：
+#    保留所有原有模块，并新增：
 #      - HTTP/3 + QUIC（用于代理）
 #      - gRPC（代理 gRPC 流量）
 #      - Brotli（更高效的压缩）
@@ -26,7 +26,7 @@ fi
 # 安装依赖
 apt update
 apt install -y build-essential wget git libpcre3 libpcre3-dev zlib1g-dev libssl-dev \
-               libxml2 libxml2-dev libxslt1-dev libgd-dev curl gnupg2 unzip
+               libxml2 libxml2-dev libxslt1-dev libgd-dev curl gnupg2 unzip xsltproc
 
 # 下载源码存放目录
 mkdir -p ${nginx_src_dir}
@@ -91,7 +91,7 @@ cd ../nginx-${nginx_version} || exit
     --with-http_dav_module --add-module=/root/nginx-dav-ext-module \
     --with-stream \
     --with-stream_ssl_module \
-    --with-http_grpc_module \
+    --with-http_grpc_pass_module \
     --with-threads \
     --with-file-aio \
     --with-http_quic_module \
