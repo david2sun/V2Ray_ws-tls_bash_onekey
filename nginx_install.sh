@@ -142,3 +142,53 @@ systemctl daemon-reload
 systemctl enable nginx
 
 echo "Nginx systemd 服务文件已创建，并设置为开机自启"
+
+judge() {
+    local status=$?
+    if [[ $status -eq 0 ]]; then
+        echo -e "\033[42;37m[✔] $1 完成\033[0m"
+        sleep 1
+    else
+        echo -e "\033[41;37m[✘] $1 失败 (错误代码: $status)\033[0m"
+        exit 1
+    fi
+}
+
+# web 站点伪装函数
+web_camouflage() {
+    # 目标目录
+    WEB_DIR="/home/wwwroot"
+
+    # 如果目录存在，则删除
+    if [ -d "$WEB_DIR" ]; then
+        echo "检测到 $WEB_DIR 目录，正在删除..."
+        rm -rf "$WEB_DIR"
+        judge "删除旧的 $WEB_DIR 目录"
+    fi
+
+    # 重新创建目录
+    mkdir -p "$WEB_DIR"
+    judge "创建 $WEB_DIR 目录"
+
+    # 进入目录
+    cd "$WEB_DIR" || { echo "无法进入 $WEB_DIR，脚本退出。"; exit 1; }
+
+    # 确保 git 已安装
+    if ! command -v git &> /dev/null; then
+        echo "git 未安装，正在安装..."
+        apt update && apt install -y git  # Ubuntu/Debian
+        # yum install -y git  # CentOS
+        judge "安装 git"
+    fi
+
+    # 克隆仓库
+    echo "正在克隆仓库..."
+    git clone https://github.com/wulabing/3DCEList.git
+    judge "克隆 GitHub 仓库"
+
+    echo "Web 站点伪装已完成。"
+}
+
+# 调用 web_camouflage 函数
+web_camouflage
+
