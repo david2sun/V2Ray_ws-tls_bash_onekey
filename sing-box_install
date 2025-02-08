@@ -53,6 +53,7 @@ fi
 echo "📌 正在安装 Sing-box..."
 dpkg -i sing-box.deb
 rm -f sing-box.deb
+ln -sf /usr/bin/sing-box /usr/local/bin/sing-box
 
 # 检查 Sing-box 是否正确安装
 if [[ ! -x /usr/local/bin/sing-box ]]; then
