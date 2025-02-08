@@ -1,35 +1,79 @@
 #!/bin/bash
-# 自动安装 Sing-box 并解决 GitHub 访问问题
+# 自动安装 Sing-box 并应用自定义配置
 
-SING_BOX_DIR="/usr/local/bin"
-SING_BOX_CONFIG="/etc/sing-box"
-SING_BOX_SERVICE="/etc/systemd/system/sing-box.service"
+set -e -o pipefail  # 遇到错误立即退出
 
-# 确保必须的软件存在
-apt update
-apt install -y curl unzip wget
-
-# 获取最新版本号
-LATEST_VERSION=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | grep "tag_name" | cut -d '"' -f 4)
-
-# 使用 GitHub 镜像加速下载
-TMP_DIR=$(mktemp -d)
-wget -O "$TMP_DIR/sing-box.zip" "https://ghproxy.com/https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-linux-amd64.zip"
-
-# 检查是否下载成功
-if [[ ! -f "$TMP_DIR/sing-box.zip" ]] || [[ $(stat -c%s "$TMP_DIR/sing-box.zip") -lt 5000000 ]]; then
-    echo "下载失败，请检查网络或使用代理！"
+# 检查是否以 root 身份运行
+if [[ $EUID -ne 0 ]]; then
+    echo "请以 root 用户运行此脚本！"
     exit 1
 fi
 
-# 解压并安装
-unzip -o "$TMP_DIR/sing-box.zip" -d "$TMP_DIR"
-install -m 755 "$TMP_DIR/sing-box" "$SING_BOX_DIR/sing-box"
+echo "📌 更新系统并安装必要工具..."
+apt update
+apt install -y curl unzip wget
 
-# 创建配置目录
+# 检测 CPU 架构
+ARCH_RAW=$(uname -m)
+case "${ARCH_RAW}" in
+    'x86_64')    ARCH='amd64';;
+    'x86' | 'i686' | 'i386')     ARCH='386';;
+    'aarch64' | 'arm64') ARCH='arm64';;
+    'armv7l')   ARCH='armv7';;
+    's390x')    ARCH='s390x';;
+    *)          echo "❌ 不支持的 CPU 架构: ${ARCH_RAW}"; exit 1;;
+esac
+echo "📌 检测到 CPU 架构: ${ARCH}"
+
+# 获取 Sing-box 最新版本号
+VERSION=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest \
+    | grep tag_name \
+    | cut -d ":" -f2 \
+    | sed 's/\"//g;s/\,//g;s/\ //g;s/v//')
+
+if [[ -z "$VERSION" ]]; then
+    echo "❌ 获取 Sing-box 最新版本号失败，请检查网络连接！"
+    exit 1
+fi
+
+echo "📌 最新 Sing-box 版本: v$VERSION"
+
+# 下载 Sing-box 官方 deb 安装包
+echo "📌 正在下载 Sing-box deb 安装包..."
+curl -Lo sing-box.deb "https://github.com/SagerNet/sing-box/releases/download/v${VERSION}/sing-box_${VERSION}_linux_${ARCH}.deb"
+
+# 确保下载成功
+if [[ ! -f "sing-box.deb" ]] || [[ $(stat -c%s "sing-box.deb") -lt 5000000 ]]; then
+    echo "❌ 下载失败，请检查网络或代理设置！"
+    rm -f sing-box.deb
+    exit 1
+fi
+
+# 安装 Sing-box
+echo "📌 正在安装 Sing-box..."
+dpkg -i sing-box.deb
+rm -f sing-box.deb
+
+# 检查 Sing-box 是否正确安装
+if [[ ! -x /usr/local/bin/sing-box ]]; then
+    echo "❌ Sing-box 安装失败，请检查 dpkg 安装日志！"
+    exit 1
+fi
+
+# 设置配置目录和 systemd 服务路径
+SING_BOX_CONFIG="/etc/sing-box"
+SING_BOX_SERVICE="/etc/systemd/system/sing-box.service"
+
+echo "📌 开始应用自定义配置..."
+
+# 备份原有配置文件（如果存在）
+if [ -f "$SING_BOX_CONFIG/config.json" ]; then
+    cp "$SING_BOX_CONFIG/config.json" "$SING_BOX_CONFIG/config.json.bak"
+    echo "✅ 备份原有配置文件至 config.json.bak"
+fi
+
+# 写入自定义配置
 mkdir -p "$SING_BOX_CONFIG"
-
-# 生成默认配置
 cat > "$SING_BOX_CONFIG/config.json" <<EOF
 {
     "log": {
@@ -54,8 +98,15 @@ cat > "$SING_BOX_CONFIG/config.json" <<EOF
     ]
 }
 EOF
+echo "✅ 自定义配置已写入 $SING_BOX_CONFIG/config.json"
 
-# 创建 systemd 服务
+# 备份原有 systemd 服务文件（如果存在）
+if [ -f "$SING_BOX_SERVICE" ]; then
+    cp "$SING_BOX_SERVICE" "$SING_BOX_SERVICE.bak"
+    echo "✅ 备份原有 systemd 服务文件至 sing-box.service.bak"
+fi
+
+# 写入自定义 systemd 服务文件
 cat > "$SING_BOX_SERVICE" <<EOF
 [Unit]
 Description=Sing-box Service
@@ -63,18 +114,19 @@ After=network.target nss-lookup.target
 
 [Service]
 User=root
-ExecStart=$SING_BOX_DIR/sing-box run -c $SING_BOX_CONFIG/config.json
+ExecStart=/usr/local/bin/sing-box run -c /etc/sing-box/config.json
 Restart=on-failure
 LimitNOFILE=1048576
 
 [Install]
 WantedBy=multi-user.target
 EOF
+echo "✅ 自定义 systemd 服务文件已写入 $SING_BOX_SERVICE"
 
-# 启用并启动 Sing-box
+# 重新加载 systemd 配置并重启 Sing-box
 systemctl daemon-reload
 systemctl enable sing-box
 systemctl restart sing-box
 
-echo "Sing-box 安装完成，已启动！"
-echo "配置文件路径: $SING_BOX_CONFIG/config.json"
+echo "🎉 Sing-box 安装完成并已应用自定义配置！"
+echo "📌 配置文件路径: $SING_BOX_CONFIG/config.json"
