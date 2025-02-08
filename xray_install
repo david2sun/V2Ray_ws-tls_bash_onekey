@@ -1,0 +1,86 @@
+#!/bin/bash
+# Xray-core 安装脚本
+# 源码地址: https://github.com/XTLS/Xray-core
+
+# 安装路径
+XRAY_DIR="/usr/local/bin"
+XRAY_CONFIG="/etc/xray"
+XRAY_SERVICE="/etc/systemd/system/xray.service"
+
+# 需要的组件
+install_software() {
+    if ! command -v "$1" &> /dev/null; then
+        apt update && apt install -y "$1"
+    fi
+}
+
+# 确保必须的软件存在
+install_software curl
+install_software unzip
+
+# 获取最新版本号
+LATEST_VERSION=$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases/latest | grep "tag_name" | cut -d '"' -f 4)
+
+# 下载 Xray-core
+TMP_DIR=$(mktemp -d)
+curl -L -o "$TMP_DIR/xray.zip" "https://github.com/XTLS/Xray-core/releases/download/${LATEST_VERSION}/Xray-linux-64.zip"
+
+# 解压并安装
+unzip -o "$TMP_DIR/xray.zip" -d "$TMP_DIR"
+install -m 755 "$TMP_DIR/xray" "$XRAY_DIR/xray"
+
+# 创建配置目录
+mkdir -p "$XRAY_CONFIG"
+
+# 生成默认配置
+cat > "$XRAY_CONFIG/config.json" <<EOF
+{
+    "log": {
+        "loglevel": "warning"
+    },
+    "inbounds": [
+        {
+            "port": 1080,
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "your-uuid-here",
+                        "alterId": 0
+                    }
+                ]
+            }
+        }
+    ],
+    "outbounds": [
+        {
+            "protocol": "freedom",
+            "settings": {}
+        }
+    ]
+}
+EOF
+
+# 创建 systemd 服务
+cat > "$XRAY_SERVICE" <<EOF
+[Unit]
+Description=Xray Service
+After=network.target nss-lookup.target
+
+[Service]
+User=root
+ExecStart=$XRAY_DIR/xray run -c $XRAY_CONFIG/config.json
+Restart=on-failure
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 启用并启动 Xray
+systemctl daemon-reload
+systemctl enable xray
+systemctl restart xray
+
+echo "Xray 安装完成，已启动！"
+echo "配置文件路径: $XRAY_CONFIG/config.json"
