@@ -11,7 +11,7 @@ sudo chown -R www-data:www-data /var/www/webdav
 sudo chmod -R 775 /var/www/webdav
 
 # 生成Nginx配置文件
-cat <<EOF | sudo tee /etc/nginx/conf.d/webdav.conf
+cat <<EOF | sudo tee /etc/nginx/conf/conf.d/webdav.conf   
 server {
     listen $port ssl http2;
     listen [::]:$port ssl http2;
