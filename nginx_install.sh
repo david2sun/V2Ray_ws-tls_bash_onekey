@@ -108,8 +108,7 @@ if [ -f "${conf_file}" ]; then
     sed -i 's/#user  nobody;/user  root;/' "${conf_file}"
     sed -i 's/worker_processes  1;/worker_processes  3;/' "${conf_file}"
     sed -i 's/    worker_connections  1024;/    worker_connections  4096;/' "${conf_file}"
-    # 引入 conf.d 目录（如果需要）
-    echo "include conf.d/*.conf;" >> "${conf_file}"
+    sed -i '$i include conf.d/*.conf;' ${nginx_dir}/conf/nginx.conf
 fi
 
 # 清理源码（可选）
