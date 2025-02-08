@@ -111,12 +111,12 @@ fi
 ln -sf ${INSTALL_DIR}/sbin/nginx /usr/bin/nginx
 
 # 修改 Nginx 配置（基本优化）
-CONF_FILE="/etc/nginx/nginx.conf"
+CONF_FILE="/etc/nginx/conf/nginx.conf"
 if [ -f "${CONF_FILE}" ]; then
-    sed -i 's/#user  nobody;/user  root;/' "${CONF_FILE}"
-    sed -i 's/worker_processes  1;/worker_processes  3;/' "${CONF_FILE}"
-    sed -i 's/    worker_connections  1024;/    worker_connections  4096;/' "${CONF_FILE}"
-    echo "include /etc/nginx/conf.d/*.conf;" >> "${CONF_FILE}"
+    sed -i 's/#user  nobody;/user  root;/' ${CONF_FILE}
+    sed -i 's/worker_processes  1;/worker_processes  3;/' ${CONF_FILE}
+    sed -i 's/    worker_connections  1024;/    worker_connections  4096;/' ${CONF_FILE}
+    sed -i '$i include conf.d/*.conf;' $CONF_FILE
 fi
 
 # 清理源码（可选）
