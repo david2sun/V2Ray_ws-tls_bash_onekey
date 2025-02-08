@@ -1,0 +1,83 @@
+#!/bin/bash
+# Sing-box 安装脚本
+# 源码地址: https://github.com/SagerNet/sing-box
+
+# 安装路径
+SING_BOX_DIR="/usr/local/bin"
+SING_BOX_CONFIG="/etc/sing-box"
+SING_BOX_SERVICE="/etc/systemd/system/sing-box.service"
+
+# 需要的组件
+install_software() {
+    if ! command -v "$1" &> /dev/null; then
+        apt update && apt install -y "$1"
+    fi
+}
+
+# 确保必须的软件存在
+install_software curl
+install_software unzip
+
+# 获取最新版本号
+LATEST_VERSION=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | grep "tag_name" | cut -d '"' -f 4)
+
+# 下载 Sing-box
+TMP_DIR=$(mktemp -d)
+curl -L -o "$TMP_DIR/sing-box.zip" "https://github.com/SagerNet/sing-box/releases/download/${LATEST_VERSION}/sing-box-linux-amd64.zip"
+
+# 解压并安装
+unzip -o "$TMP_DIR/sing-box.zip" -d "$TMP_DIR"
+install -m 755 "$TMP_DIR/sing-box" "$SING_BOX_DIR/sing-box"
+
+# 创建配置目录
+mkdir -p "$SING_BOX_CONFIG"
+
+# 生成默认配置
+cat > "$SING_BOX_CONFIG/config.json" <<EOF
+{
+    "log": {
+        "level": "warn"
+    },
+    "inbounds": [
+        {
+            "type": "vmess",
+            "listen": "::",
+            "listen_port": 1080,
+            "users": [
+                {
+                    "uuid": "your-uuid-here"
+                }
+            ]
+        }
+    ],
+    "outbounds": [
+        {
+            "type": "direct"
+        }
+    ]
+}
+EOF
+
+# 创建 systemd 服务
+cat > "$SING_BOX_SERVICE" <<EOF
+[Unit]
+Description=Sing-box Service
+After=network.target nss-lookup.target
+
+[Service]
+User=root
+ExecStart=$SING_BOX_DIR/sing-box run -c $SING_BOX_CONFIG/config.json
+Restart=on-failure
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+# 启用并启动 Sing-box
+systemctl daemon-reload
+systemctl enable sing-box
+systemctl restart sing-box
+
+echo "Sing-box 安装完成，已启动！"
+echo "配置文件路径: $SING_BOX_CONFIG/config.json"
