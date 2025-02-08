@@ -1,10 +1,18 @@
 #!/bin/bash
 
-# 停止 Nginx 服务
+# 停止 Nginx 服务（避免端口冲突）
 systemctl stop nginx
 
+# 安装 `socat`，确保 acme.sh standalone 模式可用
+if ! command -v socat &> /dev/null; then
+    echo "安装 socat..."
+    apt-get update && apt-get install -y socat
+else
+    echo "socat 已安装"
+fi
+
 # 检查是否已安装 acme.sh，如果没有，则安装
-if ! command -v ~/.acme.sh/acme.sh &> /dev/null; then
+if [ ! -d "$HOME/.acme.sh" ]; then
     echo "acme.sh 未安装，正在安装..."
     curl https://get.acme.sh | sh
     . "$HOME/.acme.sh/acme.sh.env"
@@ -25,8 +33,8 @@ mkdir -p /data
 # 设置 acme.sh 使用 Let's Encrypt
 "$HOME"/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 
-# 申请 SSL 证书（Standalone 模式，适用于无 Web 服务器的情况）
-if "$HOME"/.acme.sh/acme.sh --issue --insecure -d "${DOMAIN}" --standalone -k ec-256 --force; then
+# 申请 SSL 证书（Standalone 模式，确保 socat 已安装）
+if "$HOME"/.acme.sh/acme.sh --issue --standalone -d "${DOMAIN}" -k ec-256 --force; then
     echo "SSL 证书申请成功！"
     sleep 2
 
@@ -46,10 +54,10 @@ else
     exit 1
 fi
 
-# 重启 Nginx 服务
+# 启动 Nginx 服务
 systemctl start nginx
 
-# 重启 v2ray 服务
+# 重启 V2Ray 服务
 systemctl restart v2ray
 
 echo "SSL 证书已成功安装并应用！"
