@@ -37,7 +37,7 @@ git clone https://github.com/arut/nginx-dav-ext-module.git ${SRC_DIR}/nginx-dav-
 # 配置编译参数
 echo "配置 Nginx 编译参数..."
 ./configure --prefix=${INSTALL_DIR} \
-            --sbin-path=/usr/sbin/nginx \
+            --sbin-path=${INSTALL_DIR}/sbin/nginx \
             --conf-path=/etc/nginx/nginx.conf \
             --pid-path=/var/run/nginx.pid \
             --lock-path=/var/run/nginx.lock \
@@ -72,7 +72,11 @@ make -j$(nproc)
 echo "安装 Nginx..."
 sudo make install
 
-# 创建 Nginx systemd 服务
+# 添加 Nginx 到环境变量
+echo "添加 Nginx 到环境变量..."
+sudo ln -s ${INSTALL_DIR}/sbin/nginx /usr/bin/nginx
+
+# 配置 systemd 服务
 echo "配置 Nginx systemd 服务..."
 cat <<EOF | sudo tee /etc/systemd/system/nginx.service
 [Unit]
@@ -82,9 +86,9 @@ After=network.target
 [Service]
 Type=forking
 PIDFile=/var/run/nginx.pid
-ExecStartPre=/usr/sbin/nginx -t -q -g 'daemon on; master_process on;'
-ExecStart=/usr/sbin/nginx -g 'daemon on; master_process on;'
-ExecReload=/usr/sbin/nginx -s reload
+ExecStartPre=/usr/bin/nginx -t -q -g 'daemon on; master_process on;'
+ExecStart=/usr/bin/nginx -g 'daemon on; master_process on;'
+ExecReload=/usr/bin/nginx -s reload
 ExecStop=/bin/kill -s QUIT \$(cat /var/run/nginx.pid)
 PrivateTmp=true
 
@@ -101,4 +105,4 @@ sudo systemctl start nginx
 echo "Nginx 安装完成，当前版本："
 nginx -v
 
-echo "Nginx 1.26.3 编译安装完成，WebDAV 模块已启用！"
+echo "Nginx 1.26.3 编译安装完成，WebDAV 模块已启用，Nginx 已添加到环境变量！"
