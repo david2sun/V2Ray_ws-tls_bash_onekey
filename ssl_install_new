@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# 停止 Nginx 服务
+systemctl stop nginx
+
+# 检查是否已安装 acme.sh，如果没有，则安装
+if ! command -v ~/.acme.sh/acme.sh &> /dev/null; then
+    echo "acme.sh 未安装，正在安装..."
+    curl https://get.acme.sh | sh
+    . "$HOME/.acme.sh/acme.sh.env"
+else
+    echo "acme.sh 已安装"
+fi
+
+# 询问用户输入域名
+read -p "请输入您的域名: " DOMAIN
+
+# 设置默认的证书存放路径
+SSL_CERT="/data/v2ray.crt"
+SSL_KEY="/data/v2ray.key"
+
+# 确保 /data 目录存在
+mkdir -p /data
+
+# 设置 acme.sh 使用 Let's Encrypt
+"$HOME"/.acme.sh/acme.sh --set-default-ca --server letsencrypt
+
+# 申请 SSL 证书（Standalone 模式，适用于无 Web 服务器的情况）
+if "$HOME"/.acme.sh/acme.sh --issue --insecure -d "${DOMAIN}" --standalone -k ec-256 --force; then
+    echo "SSL 证书申请成功！"
+    sleep 2
+
+    # 安装证书到 /data 目录
+    if "$HOME"/.acme.sh/acme.sh --installcert -d "${DOMAIN}" \
+        --fullchainpath "${SSL_CERT}" \
+        --keypath "${SSL_KEY}" \
+        --ecc --force; then
+        echo "SSL 证书安装成功！"
+        sleep 2
+    else
+        echo "证书安装失败！"
+        exit 1
+    fi
+else
+    echo "SSL 证书申请失败！"
+    exit 1
+fi
+
+# 重启 Nginx 服务
+systemctl start nginx
+
+# 重启 v2ray 服务
+systemctl restart v2ray
+
+echo "SSL 证书已成功安装并应用！"
+echo "证书文件路径: ${SSL_CERT}"
+echo "密钥文件路径: ${SSL_KEY}"
