@@ -1,29 +1,26 @@
 #!/bin/bash
-# Sing-box 安装脚本
-# 源码地址: https://github.com/SagerNet/sing-box
+# 自动安装 Sing-box 并解决 GitHub 访问问题
 
-# 安装路径
 SING_BOX_DIR="/usr/local/bin"
 SING_BOX_CONFIG="/etc/sing-box"
 SING_BOX_SERVICE="/etc/systemd/system/sing-box.service"
 
-# 需要的组件
-install_software() {
-    if ! command -v "$1" &> /dev/null; then
-        apt update && apt install -y "$1"
-    fi
-}
-
 # 确保必须的软件存在
-install_software curl
-install_software unzip
+apt update
+apt install -y curl unzip wget
 
 # 获取最新版本号
 LATEST_VERSION=$(curl -s https://api.github.com/repos/SagerNet/sing-box/releases/latest | grep "tag_name" | cut -d '"' -f 4)
 
-# 下载 Sing-box
+# 使用 GitHub 镜像加速下载
 TMP_DIR=$(mktemp -d)
-curl -L -o "$TMP_DIR/sing-box.zip" "https://github.com/SagerNet/sing-box/releases/download/${LATEST_VERSION}/sing-box-linux-amd64.zip"
+wget -O "$TMP_DIR/sing-box.zip" "https://ghproxy.com/https://github.com/SagerNet/sing-box/releases/latest/download/sing-box-linux-amd64.zip"
+
+# 检查是否下载成功
+if [[ ! -f "$TMP_DIR/sing-box.zip" ]] || [[ $(stat -c%s "$TMP_DIR/sing-box.zip") -lt 5000000 ]]; then
+    echo "下载失败，请检查网络或使用代理！"
+    exit 1
+fi
 
 # 解压并安装
 unzip -o "$TMP_DIR/sing-box.zip" -d "$TMP_DIR"
