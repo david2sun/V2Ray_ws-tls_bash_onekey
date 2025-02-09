@@ -87,6 +87,7 @@ cd ../nginx-${nginx_version} || exit
     --with-http_dav_module --add-module=/root/nginx-dav-ext-module \
     --with-stream \
     --with-stream_ssl_module \
+    --with-stream_ssl_preread_module \
     --with-cc-opt='-O3' \
     --with-ld-opt="-ljemalloc" \
     --with-openssl=../openssl-${openssl_version}
