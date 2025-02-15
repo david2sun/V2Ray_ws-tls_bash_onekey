@@ -75,10 +75,6 @@ ldconfig
 cd ../nginx-${NGINX_VERSION} || exit
 
 ./configure --prefix="${INSTALL_DIR}" \
-    --sbin-path="${INSTALL_DIR}/sbin/nginx" \
-    --conf-path=/etc/nginx/nginx.conf \
-    --pid-path=/var/run/nginx.pid \
-    --lock-path=/var/run/nginx.lock \
     --with-http_ssl_module \
     --with-http_sub_module \
     --with-http_gzip_static_module \
