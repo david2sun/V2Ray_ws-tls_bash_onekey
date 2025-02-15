@@ -128,16 +128,16 @@ echo "Nginx 1.26.3 编译安装完成，安装路径：${INSTALL_DIR}"
 # 创建 systemd 服务
 cat > /etc/systemd/system/nginx.service <<EOF
 [Unit]
-Description=Nginx - high-performance web server
+Description=The NGINX HTTP and reverse proxy server
 After=network.target
 
 [Service]
 Type=forking
-PIDFile=/var/run/nginx.pid
-ExecStartPre=/usr/bin/nginx -t -q -g 'daemon on; master_process on;'
-ExecStart=/usr/bin/nginx -g 'daemon on; master_process on;'
-ExecReload=/usr/bin/nginx -s reload
-ExecStop=/bin/kill -s QUIT \$(cat /var/run/nginx.pid)
+PIDFile=${INSTALL_DIR}/logs/nginx.pid
+ExecStartPre=${INSTALL_DIR}/sbin/nginx -t
+ExecStart=${INSTALL_DIR}/sbin/nginx -c ${nginx_dir}/conf/nginx.conf
+ExecReload=${INSTALL_DIR}/sbin/nginx -s reload
+ExecStop=${INSTALL_DIR}/sbin/nginx -s quit
 PrivateTmp=true
 
 [Install]
