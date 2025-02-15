@@ -13,7 +13,7 @@
 NGINX_VERSION="1.26.3"
 OPENSSL_VERSION="3.0.8"
 JEMALLOC_VERSION="5.3.0"
-INSTALL_DIR="/usr/local/nginx"
+INSTALL_DIR="/etc/nginx"
 SOURCE_DIR="/usr/local/src"
 THREAD=$(grep -c ^processor /proc/cpuinfo)
 
