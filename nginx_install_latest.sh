@@ -26,7 +26,7 @@ fi
 # 安装依赖（适用于 Debian/Ubuntu，CentOS 需使用 yum）
 if command -v apt-get >/dev/null 2>&1; then
     apt-get update
-    apt-get install -y build-essential wget git libpcre3 libpcre3-dev zlib1g-dev libssl-dev \
+    apt-get install -y build-essential wget git libpcre3 libpcre3-dev zlib1g zlib1g-dev libssl-dev \
                        libxml2 libxml2-dev libxslt1-dev
 else
     yum install -y gcc make wget git pcre pcre-devel zlib-devel openssl-devel
@@ -89,9 +89,11 @@ cd ../nginx-${NGINX_VERSION} || exit
     --with-http_mp4_module \
     --with-http_secure_link_module \
     --with-http_v2_module \
+    --with-http_v3_module \
     --with-http_dav_module --add-module=/root/nginx-dav-ext-module \
     --with-stream \
     --with-stream_ssl_module \
+    --with-stream_ssl_preread_module \
     --with-cc-opt='-O3' \
     --with-ld-opt="-ljemalloc" \
     --with-openssl=../openssl-${OPENSSL_VERSION}
